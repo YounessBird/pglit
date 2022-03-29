@@ -1,0 +1,148 @@
+name: CI TEST
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+env:
+  RUST_BACKTRACE: 1
+
+jobs:
+  ##########################
+  # Linting and formatting #
+  ##########################
+
+  clippy:
+    if: ${{ github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/pglit')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
+
+      - run: cargo clippy --all-features -- -D warnings
+
+  rustfmt:
+    if: ${{ github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/pglit')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt
+
+      - run: cargo fmt --all -- --check
+
+  ###########
+  # Testing #
+  ###########
+
+  check-pglit:
+    name: Check pglit
+    if: ${{ github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/pglit')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - run: cargo check -p pglit
+
+  msrv:
+    name: MSRV
+    if: ${{ github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/pglit')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - msrv: "1.54.0"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.msrv }}
+          override: true
+
+      - run: cargo +nightly update -Z minimal-versions
+
+      - run: cargo check -p pglit --all-features
+
+  test:
+    if: ${{ github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/pglit')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
+    strategy:
+      fail-fast: false
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: pglit
+          POSTGRES_PASSWORD: pglit
+        # Health checks to wait until Postgres has started.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - run: cargo test -p pglit --all-features
+        env:
+          PG__HOST: 127.0.0.1
+          PG__PORT: 5432
+          PG__USER: pglit
+          PG__PASSWORD: pglit
+
+  ############
+  # Building #
+  ############
+
+  rustdoc:
+    name: Docs
+    if: ${{ github.ref == 'refs/heads/master'
+      || startsWith(github.ref, 'refs/tags/pglit')
+      || !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - run: cargo doc -p pglit --all-features
