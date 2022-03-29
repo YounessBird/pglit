@@ -2,7 +2,7 @@
 
 An implementation of PostgreSQL's createdb, dropdb and other tools.
 
-This crate uses [`tokio-postgres`](https://crates.io/crates/tokio-postgres) to implement postgresql's tools such as createdb,dropdb and also supports the use of [`deadpool-postgres`](https://crates.io/crates/deadpool-postgres) create for using those tool with connection pooling.
+This crate uses [`tokio-postgres`](https://crates.io/crates/tokio-postgres) to implement postgresql's tools such as createdb, dropdb and also supports the use of [`deadpool-postgres`](https://crates.io/crates/deadpool-postgres) create for using those tool with connection pooling.
 
 ## Example: create database using `tokio_postgres::Config` object
 
