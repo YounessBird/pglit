@@ -123,10 +123,10 @@ jobs:
 
       - run: cargo test -p pglit --all-features
         env:
-          PG__HOST: 127.0.0.1
-          PG__PORT: 5432
-          PG__USER: pglit
-          PG__PASSWORD: pglit
+          PG.HOST: 127.0.0.1
+          PG.PORT: 5432
+          PG.USER: pglit
+          PG.PASSWORD: pglit
 
   ############
   # Building #
