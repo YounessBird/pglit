@@ -66,7 +66,7 @@ async fn createdb_and_dropdb_test() {
                 }
             });
 
-            let _ = &client.execute(table, &[]).await;
+            let _ = &client.query(table, &[]).await;
             match &client
                 .query(
                     text,
