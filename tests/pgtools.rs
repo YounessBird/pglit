@@ -55,9 +55,9 @@ async fn createdb_and_dropdb_test() {
     )
     .await;
     // Test workflow success / INSERT table and return value to print in console 
-     let table = "CREATE TABLE student(id SERIAL PRIMARY KEY, firstName VARCHAR(40) NOT NULL, lastName VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
-     let text  = "INSERT INTO student(firstname, lastname, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
-
+     let table= "CREATE TABLE student(id SERIAL PRIMARY KEY, firstName VARCHAR(40) NOT NULL, lastName VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
+    let text = "INSERT INTO student(firstname, lastname, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
+    
     match connect(config.clone(), "pgtools_db_test", NoTls).await {
         Ok((client, connection)) => {
             let _ = tokio::spawn(async move {
