@@ -5,6 +5,21 @@ use deadpool_postgres::{Config as dpconfig, Pool};
 use dotenv::dotenv;
 use pglit::{connect, create_db, deadpool_create_db, drop_db, forcedrop_db};
 
+use serde::{Deserialize, Serialize};
+use tokio_pg_mapper::FromTokioPostgresRow;
+use tokio_pg_mapper_derive::PostgresMapper;
+
+#[derive(PostgresMapper, Deserialize, Serialize, Debug)]
+#[pg_mapper(table = "student")]
+pub struct Record {
+    pub id: i64,
+    pub firstName: String,
+    pub lastName: String,
+    pub age: String,
+    pub address: String,
+    pub email: String,
+}
+
 fn create_pool() -> Pool {
     dotenv().ok();
     let cfg = config::Config::from_env();
@@ -81,8 +96,12 @@ async fn createdb_and_dropdb_test() {
                 .await
             {
                 Ok(vec) => {
-                    for raw in vec.iter() {
-                        eprintln!("Row back from db : {:?}", raw);
+                    let records = vec
+                        .iter()
+                        .map(|row| Record::from_row_ref(row).unwrap())
+                        .collect::<Vec<Record>>();
+                    for r in records.iter() {
+                        eprintln!("Rows from db {:?}", r)
                     }
                 }
                 Err(e) => {
