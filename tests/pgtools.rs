@@ -81,9 +81,9 @@ async fn createdb_and_dropdb_test() {
                 .await
             {
                 Ok(vec) => {
-                    println!("{}",vec[0].get::<_, String>(0));
+                    println!("{}",vec[0].get::<_, i64>(0));
                     for r in vec {
-                        eprintln!("Row back from db : {:?}", r.get::<_, String>(0));
+                        eprintln!("Row back from db : {:?}", r.get::<_, i64>(0));
                     }
                 }
                 Err(e) => {
