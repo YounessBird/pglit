@@ -54,6 +54,46 @@ async fn createdb_and_dropdb_test() {
         },
     )
     .await;
+    // Test workflow success / INSERT table and return value to print in console 
+     let table = "CREATE TABLE student(id SERIAL PRIMARY KEY, firstName VARCHAR(40) NOT NULL, lastName VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
+    let text = "INSERT INTO student(firstname, lastname, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
+
+    match connect(config.clone(), "pgtools_db_test", NoTls).await {
+        Ok((client, connection)) => {
+            let _ = tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    eprintln!("connection error: {}", e);
+                }
+            });
+
+            let _ = &client.execute(table, &[]).await;
+            match &client
+                .query(
+                    text,
+                    &[
+                        &"Mona the",
+                        &"Octocat",
+                        &"9",
+                        &"88 Colin P Kelly Jr St, San Francisco, CA 94107, United States",
+                        &"octocat@github.com",
+                    ],
+                )
+                .await
+            {
+                Ok(vec) => {
+                    for r in vec {
+                        eprintln!("Row back from db : {:?}", r);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("an error trying to insert data in db {}", e);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("error trying to connect to db {:?}", e)
+        }
+    }
     // Attempting to create a duplicate db
     create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
         assert!(res.is_err());
