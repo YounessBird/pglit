@@ -81,12 +81,9 @@ async fn createdb_and_dropdb_test() {
                 .await
             {
                 Ok(vec) => {
-                   // println!("{}",vec[0].get::<_, i64>(0));
-                    let x: &str = vec[0].get(0);
-                    eprintln!("{}", x);
-                    //for r in vec {
-                     //   eprintln!("Row back from db : {:?}", r.get::<_, i32>(0));
-                   // }
+                    for raw in vec.iter() {
+                        eprintln!("Row back from db : {:?}", r);
+                    }
                 }
                 Err(e) => {
                     eprintln!("an error trying to insert data in db {}", e);
@@ -254,7 +251,7 @@ mod config {
     impl Config {
         pub fn from_env() -> Self {
             config::Config::builder()
-                .add_source(config::Environment::default().separator("__"))
+                .add_source(config::Environment::default())
                 .build()
                 .unwrap()
                 .try_deserialize::<Self>()
