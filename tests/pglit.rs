@@ -211,7 +211,7 @@ mod config {
     impl Config {
         pub fn from_env() -> Self {
             config::Config::builder()
-                .add_source(config::Environment::default().separator("__"))
+                .add_source(config::Environment::default())
                 .build()
                 .unwrap()
                 .try_deserialize::<Self>()
