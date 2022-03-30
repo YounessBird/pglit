@@ -55,25 +55,23 @@ async fn reset_test(mut config: &mut tkconfig) {
 
 async fn createdb_and_dropdb_test() {
     let mut config = get_tokio_config();
+    
     //reset test if run more than once
     let _ = reset_test(&mut config).await;
-    create_db(
-        &mut config.clone(),
-        "pgtools_db_test",
-        NoTls,
-        |res| match res {
-            Ok(_n) => {
-                eprintln!("database successfully created");
-            }
-            Err(e) => eprintln!("error creating db {:?}", e),
-        },
-    )
+
+    // createdb test
+    create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+        assert!(res.is_ok());
+        eprintln!("database successfully created");
+    })
     .await;
-    // Test workflow success / INSERT table and return value to print in console 
-     let table= "CREATE TABLE student(id BIGSERIAL PRIMARY KEY, first_name VARCHAR(40) NOT NULL, last_name VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
-    let text = "INSERT INTO student(first_name, last_name, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
-    
-    match connect(config.clone(), "pgtools_db_test", NoTls).await {
+
+    // Test workflow success and connect function > INSERT table and return value to print in console
+    let table= "CREATE TABLE student(id SERIAL PRIMARY KEY, firstName VARCHAR(40) NOT NULL, lastName VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
+    let text = "INSERT INTO student(firstname, lastname, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
+    let try_connect = connect(config.clone(), "pgtools_db_test", NoTls).await;
+    assert!(try_connect.is_ok());
+    match try_connect {
         Ok((client, connection)) => {
             let _ = tokio::spawn(async move {
                 if let Err(e) = connection.await {
@@ -86,11 +84,11 @@ async fn createdb_and_dropdb_test() {
                 .query(
                     text,
                     &[
-                        &"Mona the",
-                        &"Octocat",
+                        &"joe",
+                        &"doe",
                         &"9",
                         &"88 Colin P Kelly Jr St, San Francisco, CA 94107, United States",
-                        &"octocat@github.com",
+                        &"joe.doe@example.com",
                     ],
                 )
                 .await
@@ -113,6 +111,7 @@ async fn createdb_and_dropdb_test() {
             eprintln!("error trying to connect to db {:?}", e)
         }
     }
+
     // Attempting to create a duplicate db
     create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
         assert!(res.is_err());
