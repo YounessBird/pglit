@@ -13,8 +13,8 @@ use tokio_pg_mapper_derive::PostgresMapper;
 #[pg_mapper(table = "student")]
 pub struct Record {
     pub id: i64,
-    pub firstName: String,
-    pub lastName: String,
+    pub first_name: String,
+    pub last_name: String,
     pub age: String,
     pub address: String,
     pub email: String,
