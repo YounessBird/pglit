@@ -82,9 +82,11 @@ async fn createdb_and_dropdb_test() {
             {
                 Ok(vec) => {
                    // println!("{}",vec[0].get::<_, i64>(0));
-                    for r in vec {
-                        eprintln!("Row back from db : {:?}", r.get::<_, i32>(0));
-                    }
+                    let x: &str = vec[0].get(0);
+                    eprintln!("{}", x);
+                    //for r in vec {
+                     //   eprintln!("Row back from db : {:?}", r.get::<_, i32>(0));
+                   // }
                 }
                 Err(e) => {
                     eprintln!("an error trying to insert data in db {}", e);
