@@ -127,6 +127,7 @@ jobs:
           PG.PORT: 5432
           PG.USER: pglit
           PG.PASSWORD: pglit
+          PG.DBNAME: pglit
 
   ############
   # Building #
