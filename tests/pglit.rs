@@ -62,6 +62,9 @@ async fn createdb_and_dropdb_test() {
     create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
         assert!(res.is_ok());
         eprintln!("database successfully created");
+        if let Err(e) = res {
+            eprintln!("{:?}", e.message);
+        }
     })
     .await;
 
@@ -100,8 +103,8 @@ async fn createdb_and_dropdb_test() {
 async fn connect_test() {
     let config = get_tokio_config();
 
-    let table= "CREATE TABLE student(id BIGSERIAL PRIMARY KEY, firstName VARCHAR(40) NOT NULL, lastName VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
-    let text = "INSERT INTO student(firstname, lastname, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
+    let table= "CREATE TABLE student(id BIGSERIAL PRIMARY KEY, first_name VARCHAR(40) NOT NULL, last_name VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
+    let text = "INSERT INTO student(first_name, last_name, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
 
     //Test connect create database and return (client, connection)
     let try_connect = connect(config.clone(), "pgtools_db_test", NoTls).await;
@@ -112,7 +115,7 @@ async fn connect_test() {
         assert!(res.is_err());
         if let Err(e) = res {
             assert_eq!(e.code, "42P04");
-            eprintln!("error creating dublicate db {:?}", e);
+            eprintln!("error creating dublicate db {:?}", e.message);
         }
     })
     .await;
