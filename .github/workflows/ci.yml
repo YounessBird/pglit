@@ -74,7 +74,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - msrv: "1.54.0"
+          - msrv: "1.57.0"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -121,12 +121,16 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - run: cargo test -p pglit --all-features
+      - run: cargo test -p pglit -- --show-output
         env:
           PG.HOST: 127.0.0.1
           PG.PORT: 5432
           PG.USER: pglit
           PG.PASSWORD: pglit
+<<<<<<< HEAD
+=======
+          PG.DBNAME: pglit
+>>>>>>> adf708ecca229c11bde55c794e834eef8753c9b8
 
   ############
   # Building #
@@ -145,4 +149,4 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - run: cargo doc -p pglit --all-features
+      - run: cargo doc -p pglit 

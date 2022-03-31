@@ -5,6 +5,21 @@ use deadpool_postgres::{Config as dpconfig, Pool};
 use dotenv::dotenv;
 use pglit::{connect, create_db, deadpool_create_db, drop_db, forcedrop_db};
 
+use serde::{Deserialize, Serialize};
+use tokio_pg_mapper::FromTokioPostgresRow;
+use tokio_pg_mapper_derive::PostgresMapper;
+
+#[derive(PostgresMapper, Deserialize, Serialize, Debug)]
+#[pg_mapper(table = "student")]
+pub struct Record {
+    pub id: i64,
+    pub first_name: String,
+    pub last_name: String,
+    pub age: String,
+    pub address: String,
+    pub email: String,
+}
+
 fn create_pool() -> Pool {
     dotenv().ok();
     let cfg = config::Config::from_env();
@@ -36,26 +51,10 @@ async fn reset_test(mut config: &mut tkconfig) {
     .await;
 }
 
-use serde::{Deserialize, Serialize};
-use tokio_pg_mapper::FromTokioPostgresRow;
-use tokio_pg_mapper_derive::PostgresMapper;
-
-#[derive(PostgresMapper, Deserialize, Serialize, Debug)]
-#[pg_mapper(table = "student")]
-pub struct Record {
-    pub id: i64,
-    pub first_name: String,
-    pub last_name: String,
-    pub age: String,
-    pub address: String,
-    pub email: String,
-}
-
 #[tokio::test]
 
 async fn createdb_and_dropdb_test() {
     let mut config = get_tokio_config();
-
     //reset test if run more than once
     let _ = reset_test(&mut config).await;
 

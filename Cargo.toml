@@ -34,3 +34,4 @@ futures = "0.3.1"
 tokio-postgres = "0.7.5"
 tokio-pg-mapper = "0.2.0"
 tokio-pg-mapper-derive = "0.2.0"
+
