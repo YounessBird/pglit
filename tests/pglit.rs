@@ -66,7 +66,7 @@ async fn createdb_and_dropdb_test() {
         |res| match res {
             Ok(_n) => eprintln!("database successfully created"),
             Err(e) => eprintln!("error creating db {:?}", e)
-        }).await
+        }).await;
 
 
     // Attempting to create a duplicate db
