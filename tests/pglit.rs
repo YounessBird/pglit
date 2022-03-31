@@ -59,14 +59,15 @@ async fn createdb_and_dropdb_test() {
     let _ = reset_test(&mut config).await;
 
     // createdb test
-    create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
-        //assert!(res.is_ok());
-        eprintln!("database successfully created");
-        if let Err(e) = res {
-            eprintln!("{:?}", e.message);
-        }
-    })
-    .await;
+    create_db(
+        &mut config.clone(),
+        "pgtools_db_test",
+        NoTls,
+        |res| match res {
+            Ok(_n) => eprintln!("database successfully created"),
+            Err(e) => eprintln!("error creating db {:?}", e)
+        }).await
+
 
     // Attempting to create a duplicate db
     create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
