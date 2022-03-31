@@ -37,15 +37,14 @@ fn get_deadpool_config() -> dpconfig {
 }
 
 async fn reset_test(mut config: &mut tkconfig) {
-    drop_db(&mut config, "pglit_db_test", NoTls, |res| {
-        if let Err(e) = res {
+    drop_db(&mut config, "pglit_db_test", NoTls, |res| match res {
+        Ok(_n) => eprintln!("db successfuly deleted"),
+        Err(e) => {
             if e.code == "3D000" {
                 eprintln!("attempting to delete a db that doesn't exist");
             } else {
                 eprintln!("{:?}", e);
             }
-        } else {
-            eprintln!("db successfuly deleted");
         }
     })
     .await;
@@ -102,72 +101,72 @@ async fn createdb_and_dropdb_test() {
     .await
 }
 
-//#[tokio::test]
-// async fn connect_test() {
-//     let config = get_tokio_config();
+#[tokio::test]
+async fn connect_test() {
+    let config = get_tokio_config();
 
-//     let table= "CREATE TABLE student(id BIGSERIAL PRIMARY KEY, first_name VARCHAR(40) NOT NULL, last_name VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
-//     let text = "INSERT INTO student(first_name, last_name, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
+    let table= "CREATE TABLE student(id BIGSERIAL PRIMARY KEY, first_name VARCHAR(40) NOT NULL, last_name VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
+    let text = "INSERT INTO student(first_name, last_name, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
 
-//     //Test connect create database and return (client, connection)
-//     let try_connect = connect(config.clone(), "pglit_db_test", NoTls).await;
-//     assert!(try_connect.is_ok());
+    //Test connect create database and return (client, connection)
+    let try_connect = connect(config.clone(), "pglit_db_test", NoTls).await;
+    assert!(try_connect.is_ok());
 
-//     // Attempt to create duplicate database should result an error
-//     create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
-//         assert!(res.is_err());
-//         if let Err(e) = res {
-//             assert_eq!(e.code, "42P04");
-//             eprintln!("error creating dublicate db {:?}", e.message);
-//         }
-//     })
-//     .await;
+    // Attempt to create duplicate database should result an error
+    create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
+        assert!(res.is_err());
+        if let Err(e) = res {
+            assert_eq!(e.code, "42P04");
+            eprintln!("error creating dublicate db {:?}", e.message);
+        }
+    })
+    .await;
 
-//     // connect Shoudl handle duplicate database creation error,INSERT table and return value to print in console
-//     let try_connect_handle_duplicate = connect(config.clone(), "pglit_db_test", NoTls).await;
-//     assert!(try_connect_handle_duplicate.is_ok());
+    // connect Shoudl handle duplicate database creation error,INSERT table and return value to print in console
+    let try_connect_handle_duplicate = connect(config.clone(), "pglit_db_test", NoTls).await;
+    assert!(try_connect_handle_duplicate.is_ok());
 
-//     match try_connect_handle_duplicate {
-//         Ok((client, connection)) => {
-//             let _ = tokio::spawn(async move {
-//                 if let Err(e) = connection.await {
-//                     eprintln!("connection error: {}", e);
-//                 }
-//             });
+    match try_connect_handle_duplicate {
+        Ok((client, connection)) => {
+            let _ = tokio::spawn(async move {
+                if let Err(e) = connection.await {
+                    eprintln!("connection error: {}", e);
+                }
+            });
 
-//             let _ = &client.query(table, &[]).await;
-//             match &client
-//                 .query(
-//                     text,
-//                     &[
-//                         &"joe",
-//                         &"doe",
-//                         &"9",
-//                         &"88 Colin P Kelly Jr St, San Francisco, CA 94107, United States",
-//                         &"joe.doe@example.com",
-//                     ],
-//                 )
-//                 .await
-//             {
-//                 Ok(vec) => {
-//                     let records = vec
-//                         .iter()
-//                         .map(|row| Record::from_row_ref(row).unwrap())
-//                         .collect::<Vec<Record>>();
-//                     for r in records.iter() {
-//                         eprintln!("Rows from db {:?}", r)
-//                     }
-//                 }
-//                 Err(e) => {
-//                     eprintln!("an error trying to insert data in db {}", e);
-//                 }
-//             }
-//         }
-//         Err(e) => {
-//             eprintln!("error trying to connect to db {:?}", e)
-//         }
-//     }
-// }
+            let _ = &client.query(table, &[]).await;
+            match &client
+                .query(
+                    text,
+                    &[
+                        &"joe",
+                        &"doe",
+                        &"9",
+                        &"88 Colin P Kelly Jr St, San Francisco, CA 94107, United States",
+                        &"joe.doe@example.com",
+                    ],
+                )
+                .await
+            {
+                Ok(vec) => {
+                    let records = vec
+                        .iter()
+                        .map(|row| Record::from_row_ref(row).unwrap())
+                        .collect::<Vec<Record>>();
+                    for r in records.iter() {
+                        eprintln!("Rows from db {:?}", r)
+                    }
+                }
+                Err(e) => {
+                    eprintln!("an error trying to insert data in db {}", e);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("error trying to connect to db {:?}", e)
+        }
+    }
+}
 #[tokio::test]
 async fn force_drop_db_test() {
     //reset test if run more than once
