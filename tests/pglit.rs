@@ -113,14 +113,14 @@ async fn connect_test() {
     assert!(try_connect.is_ok());
 
     // Attempt to create duplicate database should result an error
-    create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
-        assert!(res.is_err());
-        if let Err(e) = res {
-            assert_eq!(e.code, "42P04");
-            eprintln!("error creating dublicate db {:?}", e.message);
-        }
-    })
-    .await;
+    // create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
+    //     assert!(res.is_err());
+    //     if let Err(e) = res {
+    //         assert_eq!(e.code, "42P04");
+    //         eprintln!("error creating dublicate db {:?}", e.message);
+    //     }
+    // })
+    // .await;
 
     // connect Shoudl handle duplicate database creation error,INSERT table and return value to print in console
     let try_connect_handle_duplicate = connect(config.clone(), "pglit_db_test", NoTls).await;
