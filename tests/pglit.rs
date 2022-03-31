@@ -59,15 +59,15 @@ async fn createdb_and_dropdb_test() {
 
     // createdb test
     create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
-        // assert!(res.is_ok());
-        // eprintln!("database successfully created");
-        // if let Err(e) = res {
-        //     eprintln!("{:?}", e.message);
-        // }
-        match res {
-            Ok(_n) => println!("first dp created"),
-            Err(e) => println!("error creating db {:?}", e),
+        assert!(res.is_ok());
+        eprintln!("database successfully created");
+        if let Err(e) = res {
+            eprintln!("{:?}", e.message);
         }
+        // match res {
+        //     Ok(_n) => println!("first dp created"),
+        //     Err(e) => println!("error creating db {:?}", e),
+        // }
     })
     .await;
 
@@ -109,10 +109,8 @@ async fn connect_test() {
     let text = "INSERT INTO student(first_name, last_name, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
 
     //Test connect create database and return (client, connection)
-    // let try_connect = connect(config.clone(), "pglit_db_test", NoTls).await;
-    assert!(connect(config.clone(), "pglit_db_test", NoTls)
-        .await
-        .is_ok());
+    let try_connect = connect(config.clone(), "pglit_db_test", NoTls).await;
+    assert!(try_connect.is_ok());
 
     // Attempt to create duplicate database should result an error
     create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
