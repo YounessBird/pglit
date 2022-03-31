@@ -109,18 +109,20 @@ async fn connect_test() {
     let text = "INSERT INTO student(first_name, last_name, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
 
     //Test connect create database and return (client, connection)
-    let try_connect = connect(config.clone(), "pglit_db_test", NoTls).await;
-    assert!(try_connect.is_ok());
+    // let try_connect = connect(config.clone(), "pglit_db_test", NoTls).await;
+    assert!(connect(config.clone(), "pglit_db_test", NoTls)
+        .await
+        .is_ok());
 
     // Attempt to create duplicate database should result an error
-    // create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
-    //     assert!(res.is_err());
-    //     if let Err(e) = res {
-    //         assert_eq!(e.code, "42P04");
-    //         eprintln!("error creating dublicate db {:?}", e.message);
-    //     }
-    // })
-    // .await;
+    create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
+        assert!(res.is_err());
+        if let Err(e) = res {
+            assert_eq!(e.code, "42P04");
+            eprintln!("error creating dublicate db {:?}", e.message);
+        }
+    })
+    .await;
 
     // connect Shoudl handle duplicate database creation error,INSERT table and return value to print in console
     let try_connect_handle_duplicate = connect(config.clone(), "pglit_db_test", NoTls).await;
