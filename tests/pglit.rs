@@ -66,12 +66,63 @@ async fn createdb_and_dropdb_test() {
     })
     .await;
 
-    // Test workflow success and connect function > INSERT table and return value to print in console
+    // Attempting to create a duplicate db
+    create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+        assert!(res.is_err());
+        if let Err(e) = res {
+            if e.code != "42P04" {
+                eprintln!("creating dublicate db should result a 42P04 error");
+                assert_eq!("42P04", e.code);
+            }
+        }
+    })
+    .await;
+
+    drop_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+        assert!(res.is_ok());
+        if let Err(e) = res {
+            eprintln!("fail to drop database, {:?}", e);
+        }
+    })
+    .await;
+
+    // Attempting to drop a db that was dropped by the previous drop_db call
+    drop_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+        assert!(res.is_err());
+        if let Err(e) = res {
+            assert_eq!("3D000", e.code);
+        }
+    })
+    .await
+}
+
+#[tokio::test]
+
+async fn connect_test() {
+    let config = get_tokio_config();
+
     let table= "CREATE TABLE student(id BIGSERIAL PRIMARY KEY, firstName VARCHAR(40) NOT NULL, lastName VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40))";
     let text = "INSERT INTO student(firstname, lastname, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
+
+    //Test connect create database and return (client, connection)
     let try_connect = connect(config.clone(), "pgtools_db_test", NoTls).await;
     assert!(try_connect.is_ok());
-    match try_connect {
+
+    // Attempt to create duplicate database should result an error
+    create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+        assert!(res.is_err());
+        if let Err(e) = res {
+            assert_eq!(e.code, "42P04");
+            eprintln!("error creating dublicate db {:?}", e);
+        }
+    })
+    .await;
+
+    // connect Shoudl handle duplicate database creation error,INSERT table and return value to print in console
+    let try_connect_handle_duplicate = connect(config.clone(), "pgtools_db_test", NoTls).await;
+    assert!(try_connect_handle_duplicate.is_ok());
+
+    match try_connect_handle_duplicate {
         Ok((client, connection)) => {
             let _ = tokio::spawn(async move {
                 if let Err(e) = connection.await {
@@ -111,35 +162,6 @@ async fn createdb_and_dropdb_test() {
             eprintln!("error trying to connect to db {:?}", e)
         }
     }
-
-    // Attempting to create a duplicate db
-    create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
-        assert!(res.is_err());
-        if let Err(e) = res {
-            if e.code != "42P04" {
-                eprintln!("creating dublicate db should result a 42P04 error");
-                assert_eq!("42P04", e.code);
-            }
-        }
-    })
-    .await;
-
-    drop_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
-        assert!(res.is_ok());
-        if let Err(e) = res {
-            eprintln!("fail to drop database, {:?}", e);
-        }
-    })
-    .await;
-
-    // Attempting to drop a db that was dropped by the previous drop_db call
-    drop_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
-        assert!(res.is_err());
-        if let Err(e) = res {
-            assert_eq!("3D000", e.code);
-        }
-    })
-    .await
 }
 
 #[tokio::test]
@@ -200,15 +222,6 @@ async fn creare_db_and_get_pool_should_fail() {
     if let Err(_e) = &result {
         assert!(&result.is_err());
     }
-}
-
-#[tokio::test]
-
-async fn connect_to_db_should_succeed() {
-    dotenv().ok();
-    let cfg = get_tokio_config();
-    let result = connect(cfg, "pgtools", NoTls).await;
-    assert!(result.is_ok());
 }
 
 use std::{collections::HashMap, env};
