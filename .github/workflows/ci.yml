@@ -127,10 +127,6 @@ jobs:
           PG.PORT: 5432
           PG.USER: pglit
           PG.PASSWORD: pglit
-<<<<<<< HEAD
-=======
-          PG.DBNAME: pglit
->>>>>>> adf708ecca229c11bde55c794e834eef8753c9b8
 
   ############
   # Building #
@@ -149,4 +145,4 @@ jobs:
           profile: minimal
           toolchain: stable
 
-      - run: cargo doc -p pglit 
+      - run: cargo doc -p pglit
