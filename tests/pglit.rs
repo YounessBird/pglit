@@ -37,7 +37,7 @@ fn get_deadpool_config() -> dpconfig {
 }
 
 async fn reset_test(mut config: &mut tkconfig) {
-    drop_db(&mut config, "pgtools_db_test", NoTls, |res| {
+    drop_db(&mut config, "pglit_db_test", NoTls, |res| {
         if let Err(e) = res {
             if e.code == "3D000" {
                 eprintln!("attempting to delete a db that doesn't exist");
@@ -59,7 +59,7 @@ async fn createdb_and_dropdb_test() {
     let _ = reset_test(&mut config).await;
 
     // createdb test
-    create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+    create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
         assert!(res.is_ok());
         eprintln!("database successfully created");
         if let Err(e) = res {
@@ -69,7 +69,7 @@ async fn createdb_and_dropdb_test() {
     .await;
 
     // Attempting to create a duplicate db
-    create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+    create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
         assert!(res.is_err());
         if let Err(e) = res {
             if e.code != "42P04" {
@@ -80,7 +80,7 @@ async fn createdb_and_dropdb_test() {
     })
     .await;
 
-    drop_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+    drop_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
         assert!(res.is_ok());
         if let Err(e) = res {
             eprintln!("fail to drop database, {:?}", e);
@@ -89,7 +89,7 @@ async fn createdb_and_dropdb_test() {
     .await;
 
     // Attempting to drop a db that was dropped by the previous drop_db call
-    drop_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+    drop_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
         assert!(res.is_err());
         if let Err(e) = res {
             assert_eq!("3D000", e.code);
@@ -107,11 +107,11 @@ async fn connect_test() {
     let text = "INSERT INTO student(first_name, last_name, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *";
 
     //Test connect create database and return (client, connection)
-    let try_connect = connect(config.clone(), "pgtools_db_test", NoTls).await;
+    let try_connect = connect(config.clone(), "pglit_db_test", NoTls).await;
     assert!(try_connect.is_ok());
 
     // Attempt to create duplicate database should result an error
-    create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| {
+    create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| {
         assert!(res.is_err());
         if let Err(e) = res {
             assert_eq!(e.code, "42P04");
@@ -121,7 +121,7 @@ async fn connect_test() {
     .await;
 
     // connect Shoudl handle duplicate database creation error,INSERT table and return value to print in console
-    let try_connect_handle_duplicate = connect(config.clone(), "pgtools_db_test", NoTls).await;
+    let try_connect_handle_duplicate = connect(config.clone(), "pglit_db_test", NoTls).await;
     assert!(try_connect_handle_duplicate.is_ok());
 
     match try_connect_handle_duplicate {
@@ -171,11 +171,11 @@ async fn force_drop_db_test() {
     //reset test if run more than once
     let mut config = get_tokio_config();
     let _ = reset_test(&mut config).await;
-    let force_drop = create_db(&mut config.clone(), "pgtools_db_test", NoTls, |res| async {
+    let force_drop = create_db(&mut config.clone(), "pglit_db_test", NoTls, |res| async {
         match res {
             Ok(_n) => {
                 eprintln!("database successfully created");
-                forcedrop_db(&mut config.clone(), "pgtools_db_test", NoTls, |result| {
+                forcedrop_db(&mut config.clone(), "pglit_db_test", NoTls, |result| {
                     match &result {
                         Ok(_n) => {
                             eprintln!("database was forced to drop");
