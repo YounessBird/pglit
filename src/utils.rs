@@ -24,7 +24,7 @@ where
     let mut db_name = db_name.to_string();
 
     if cfg!(feature = "quotes") {
-        let escaped_db_name = db_name.replace("\"", "");
+        let escaped_db_name = db_name.replace('\"', "");
         db_name = format!(r#""{}""#, escaped_db_name);
     }
 
