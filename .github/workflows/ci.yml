@@ -122,6 +122,7 @@ jobs:
           toolchain: stable
 
       - run: cargo test -p pglit -- --show-output
+      - run: cargo test -p pglit --all-features
         env:
           PG.HOST: 127.0.0.1
           PG.PORT: 5432

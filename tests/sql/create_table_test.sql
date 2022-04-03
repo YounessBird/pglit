@@ -1,0 +1,1 @@
+CREATE TABLE student(id BIGSERIAL PRIMARY KEY, first_name VARCHAR(40) NOT NULL, last_name VARCHAR(40) NOT NULL, age VARCHAR(40), address VARCHAR(80), email VARCHAR(40));
