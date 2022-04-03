@@ -21,18 +21,29 @@
 )]
 
 pub use deadpool_postgres;
-
 use deadpool_postgres::tokio_postgres::{
     tls::MakeTlsConnect, tls::TlsConnect, Client, Config as PgConfig, Connection,
     Error as TokioError, Socket,
 };
+mod utils;
+pub use utils::errors::CustomError as CustomErrors;
+use utils::handle_db;
 
-const ADMIN_DB: &str = "postgres";
-
-#[doc = "Type alias for using [`errors::CustomError`] with [`tokio_postgres`][`deadpool_postgres::tokio_postgres`]."]
-pub type CustomError = errors::CustomError;
+#[doc = "Type alias for using [`CustomError`][CustomErrors] with [`tokio_postgres`][`deadpool_postgres::tokio_postgres`]."]
+pub type CustomError = CustomErrors;
 
 /// Creates a new database using this [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
+///
+/// Note that by default the database name created will be without **the double quotes**. This comes with some benefits:
+///
+///  - Omit typing the double quotes all the time.
+///  - It will always be folded to lower case.
+///
+/// If you wish the database name to be created with the double quotes, you need to enable the **`quotes`** feature.
+///
+/// Refer to [PosgreSql doc](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS) For more details.
+///  
+/// The database name in [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`] will be ignored and replaced with the `db_name` argument.
 ///
 /// Obtain a [`Result<u64, CustomError>`] via a callback Closure
 ///
@@ -74,6 +85,12 @@ where
 
 /// Dropes a database using this [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
 ///
+/// Note that by default the database name dropped will be without the **double quotes**.
+///If you wish the database name to be dropped with **the double quotes**, you need to enable the **`quotes`** feature.
+///
+/// Refer to [PosgreSql doc](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS) For more details.
+///  
+/// The database name in [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`] will be ignored and replaced with the `db_name` argument.
 /// Obtain a [`Result<u64, CustomError>`] via a callback Closure
 ///
 ///
@@ -113,7 +130,7 @@ where
 
 /// Force Drop a database using this [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
 ///
-/// This function will force drop the database using the Force option introduced in PostgreSQL 13.
+/// This function will force drop the database using the Force option introduced in `PostgreSQL 13`.
 ///
 /// # Details
 /// From the postgres doc :
@@ -123,7 +140,7 @@ where
 /// Required permissions are the same as with pg_terminate_backend, described in Section 9.27.2.
 /// This will also fail if we are not able to terminate connections.
 ///
-/// obtain a [Result<u64, CustomError>] via a callback Closure
+/// obtain a [Result<u64, `CustomError`>] via a callback Closure
 ///
 ///
 /// # Errors
@@ -158,48 +175,6 @@ where
     <T::TlsConnect as TlsConnect<Socket>>::Future: Send,
 {
     handle_db(config, db_name, tls, cb, "DROP, WITH (FORCE);").await;
-}
-
-/// Handles creating and dropping the database
-async fn handle_db<F, T, U>(
-    config: &mut PgConfig,
-    db_name: &str,
-    tls: T,
-    mut cb: F,
-    action: &str,
-) -> U
-where
-    F: FnMut(Result<u64, CustomError>) -> U,
-    T: MakeTlsConnect<Socket> + Clone + Sync + Send + 'static,
-    T::Stream: Sync + Send,
-    T::TlsConnect: Sync + Send,
-    <T::TlsConnect as TlsConnect<Socket>>::Future: Send,
-{
-    let _ = config.dbname(ADMIN_DB);
-    match config.connect(tls).await {
-        Ok((client, connection)) => {
-            let db_sql = get_sql_statement(action, db_name);
-            let _ = config.dbname(db_name);
-            // Note : to be changed
-            let _ = tokio::spawn(async move {
-                if let Err(e) = connection.await {
-                    eprintln!("connection error: {}", e);
-                }
-            });
-            // maybe handle error before passing the to call back
-            match (&client).execute(&db_sql, &[]).await {
-                Ok(res) => cb(Ok(res)),
-                Err(pgerror) => {
-                    // Note: review code check if error handeling is neccesary here
-                    cb(Err(errors::CustomError::new(pgerror)))
-                }
-            }
-        }
-        Err(pgerror) => {
-            println!("cb received pg result");
-            cb(Err(errors::CustomError::new(pgerror)))
-        }
-    }
 }
 
 use {
@@ -271,7 +246,7 @@ where
         .get_pg_config()
         .map_err(deadpool::managed::CreatePoolError::Config)?;
 
-    let db_name = config.dbname.clone().unwrap().to_owned();
+    let db_name = config.dbname.clone().unwrap();
 
     create_db(&mut pgconfig, &db_name, tls.clone(), |res| match res {
         Ok(_r) => config.create_pool(runtime, tls.clone()),
@@ -287,9 +262,14 @@ where
     })
     .await
 }
-///Convenient function that attempts to establish a connection with *db_name and then return [`tokio_postgres`][`deadpool_postgres::tokio_postgres`] [`Client`].
+///Convenient function that attempts to establish a connection with `db_name` and then return [`tokio_postgres`][`deadpool_postgres::tokio_postgres`] [`Client`].
 ///
-/// This function will attempt to establish a connection using the *`db_name` and it will handle the "42P04", "Attempting to create a duplicate database." postgres error if returned, by creating a new database named after the *`db_name` provided
+/// Note that by default the database name created will be without the **double quotes**.
+/// If you wish the database name to be created with **the double quotes**, you need to enable the **`quotes`** feature.
+///
+/// Refer to [PosgreSql doc](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS) For more details.
+///
+/// This function will attempt to establish a connection using the `db_name` argument and it will handle the "42P04", "Attempting to create a duplicate database." postgres error if returned, by creating a new database named after the `db_name` argument provided
 /// and then returns a [`tokio_postgres`][`deadpool_postgres::tokio_postgres`] [`Client`].
 ///
 /// # Errors
@@ -298,7 +278,7 @@ where
 ///
 ///
 pub async fn connect<T>(
-    config: PgConfig,
+    mut config: PgConfig,
     db_name: &str,
     tls: T,
 ) -> Result<(Client, Connection<Socket, T::Stream>), TokioError>
@@ -308,6 +288,7 @@ where
     T::TlsConnect: Sync + Send,
     <T::TlsConnect as TlsConnect<Socket>>::Future: Send,
 {
+    let _ = config.dbname(db_name);
     let client_result = create_db(&mut config.clone(), db_name, tls.clone(), |result| async {
         match result {
             Ok(_n) => config.connect(tls.clone()).await,
@@ -322,49 +303,4 @@ where
     })
     .await;
     client_result.await
-}
-
-fn get_sql_statement(action: &str, db_name: &str) -> String {
-    let stm = action.split(',').collect::<Vec<&str>>();
-    let db_sql = include_str!("../sql/create_or_drop_db.sql").replace("$db_name", db_name);
-    let mut db_sql = db_sql.replace("$action", stm[0]).trim().to_string();
-    if action.contains("DROP, WITH (FORCE);") {
-        let _ = db_sql.pop();
-        db_sql.push_str(stm[1]);
-    }
-    db_sql
-}
-
-/// A convenient way to access the error message and code
-pub mod errors {
-    use deadpool_postgres::tokio_postgres::Error as PGError;
-
-    /// Wrapper to make it convenient to access the error message and code or the entire [`tokio_postgres::Error`][`PGError`].
-    #[derive(Debug)]
-    pub struct CustomError {
-        ///Error message
-        pub message: String,
-        ///Error Code
-        pub code: String,
-        ///Postgres Error
-        pub pg_error: PGError,
-    }
-    impl CustomError {
-        /// Create a new [`CustomError`]
-        pub fn new(error: PGError) -> CustomError {
-            CustomError {
-                message: if error.as_db_error() != None {
-                    error.as_db_error().unwrap().message().replace('\"', "")
-                } else {
-                    "".to_string()
-                },
-                code: if error.code() != None {
-                    error.code().unwrap().code().to_string()
-                } else {
-                    "".to_string()
-                },
-                pg_error: error,
-            }
-        }
-    }
 }

@@ -128,6 +128,13 @@ jobs:
           PG.USER: pglit
           PG.PASSWORD: pglit
           PG.DBNAME: pglit
+      - run: cargo test -p pglit --all-features
+        env:
+          PG.HOST: 127.0.0.1
+          PG.PORT: 5432
+          PG.USER: pglit
+          PG.PASSWORD: pglit
+          PG.DBNAME: pglit
 
   ############
   # Building #

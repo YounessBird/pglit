@@ -1,0 +1,1 @@
+INSERT INTO student(first_name, last_name, age, address, email) VALUES($1, $2, $3, $4, $5) RETURNING *;
