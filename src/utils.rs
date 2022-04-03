@@ -83,7 +83,7 @@ pub(crate) mod errors {
     impl CustomError {
         #[must_use]
         /// Create a new [`CustomError`]
-        pub fn new(error: PGError) -> CustomError {
+        pub(crate) fn new(error: PGError) -> CustomError {
             CustomError {
                 message: if error.as_db_error() == None {
                     "".to_string()

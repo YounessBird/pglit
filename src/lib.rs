@@ -26,9 +26,11 @@ use deadpool_postgres::tokio_postgres::{
     Error as TokioError, Socket,
 };
 mod utils;
+pub use utils::errors::CustomError as CustomErrors;
+use utils::handle_db;
 
-#[doc = "Type alias for using [`errors::CustomError`] with [`tokio_postgres`][`deadpool_postgres::tokio_postgres`]."]
-pub type CustomError = utils::errors::CustomError;
+#[doc = "Type alias for using [`CustomError`][CustomErrors] with [`tokio_postgres`][`deadpool_postgres::tokio_postgres`]."]
+pub type CustomError = CustomErrors;
 
 /// Creates a new database using this [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
 ///
@@ -78,7 +80,7 @@ where
     T::TlsConnect: Sync + Send,
     <T::TlsConnect as TlsConnect<Socket>>::Future: Send,
 {
-    utils::handle_db(config, db_name, tls, cb, "CREATE").await
+    handle_db(config, db_name, tls, cb, "CREATE").await
 }
 
 /// Dropes a database using this [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
@@ -123,7 +125,7 @@ where
     T::TlsConnect: Sync + Send,
     <T::TlsConnect as TlsConnect<Socket>>::Future: Send,
 {
-    utils::handle_db(config, db_name, tls, cb, "DROP").await
+    handle_db(config, db_name, tls, cb, "DROP").await
 }
 
 /// Force Drop a database using this [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
@@ -172,7 +174,7 @@ where
     T::TlsConnect: Sync + Send,
     <T::TlsConnect as TlsConnect<Socket>>::Future: Send,
 {
-    utils::handle_db(config, db_name, tls, cb, "DROP, WITH (FORCE);").await;
+    handle_db(config, db_name, tls, cb, "DROP, WITH (FORCE);").await;
 }
 
 use {
