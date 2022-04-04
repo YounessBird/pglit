@@ -32,16 +32,12 @@ use utils::handle_db;
 #[doc = "Type alias for using [`CustomError`][CustomErrors] with [`tokio_postgres`][`deadpool_postgres::tokio_postgres`]."]
 pub type CustomError = CustomErrors;
 
-/// Creates a new database using this [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
+/// Creates a new database using the [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
 ///
-/// Note that by default the database name created will be without **the double quotes**. This comes with some benefits:
+/// Note that by default the `db_name` argument shouldn't be enclosed in **double quotes** (").\    
+/// To create a database that has a name enclosed in **double-quotes** ("), the **`quotes`** feature has to be enabled.
 ///
-///  - Omit typing the double quotes all the time.
-///  - It will always be folded to lower case.
-///
-/// If you wish the database name to be created with the double quotes, you need to enable the **`quotes`** feature.
-///
-/// Refer to [PosgreSql doc](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS) For more details.
+/// To Learn more about PostgreSQL's Syntax Refer to [PosgreSql doc](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
 ///  
 /// The database name in [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`] will be ignored and replaced with the `db_name` argument.
 ///
@@ -83,12 +79,12 @@ where
     handle_db(config, db_name, tls, cb, "CREATE").await
 }
 
-/// Dropes a database using this [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
+/// Dropes a database using the [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
 ///
-/// Note that by default the database name dropped will be without the **double quotes**.
-///If you wish the database name to be dropped with **the double quotes**, you need to enable the **`quotes`** feature.
+/// Note that by default the `db_name` argument shouldn't be enclosed in **double quotes**.
+/// To drop a database that has a name enclosed in **double-quotes** ("), the **`quotes`** feature has to be enabled.
 ///
-/// Refer to [PosgreSql doc](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS) For more details.
+/// To Learn more about PostgreSQL's Syntax Refer to [PosgreSql doc](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
 ///  
 /// The database name in [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`] will be ignored and replaced with the `db_name` argument.
 /// Obtain a [`Result<u64, CustomError>`] via a callback Closure
@@ -128,19 +124,24 @@ where
     handle_db(config, db_name, tls, cb, "DROP").await
 }
 
-/// Force Drop a database using this [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
+/// Force drop a database using the [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`].
 ///
-/// This function will force drop the database using the Force option introduced in `PostgreSQL 13`.
+/// This function will force drop the database using the **_Force_** option introduced in `PostgreSQL 13`.
 ///
 /// # Details
-/// From the postgres doc :
-/// Attempt to terminate all existing connections to the target database.
-/// It doesn't terminate if prepared transactions, active logical replication slots or subscriptions are present in the target database.
-/// This will fail if the current user has no permissions to terminate other connections.
-/// Required permissions are the same as with pg_terminate_backend, described in Section 9.27.2.
-/// This will also fail if we are not able to terminate connections.
+/// From the [postgres doc](https://www.postgresql.org/docs/current/sql-dropdatabase.html) the **_Force_** option:
 ///
-/// obtain a [Result<u64, `CustomError`>] via a callback Closure
+/// Attempt to terminate all existing connections to the target database.
+/// It doesn't terminate if prepared transactions, active logical replication slots or subscriptions are present in the target database.\
+/// This will fail if the current user has no permissions to terminate other connections.<br/>
+/// To learn more refer to [postgres doc](https://www.postgresql.org/docs/current/sql-dropdatabase.html)
+///
+/// # Important
+/// Note that by default the `db_name` argument shouldn't be enclosed in **double quotes**.
+/// To drop a database that has a name enclosed in **double-quotes** ("), the **`quotes`** feature has to be enabled.
+///
+///
+/// obtain a [Result<u64, CustomError>] via a callback Closure
 ///
 ///
 /// # Errors
@@ -183,10 +184,14 @@ use {
     deadpool_postgres::{Config as dpConfig, Pool, Runtime},
 };
 
-/// Convenient function to programmatically create a database.
+/// Convenient function to create a database and get a connection pool using the [`deadpool_postgres`](https://docs.rs/deadpool-postgres/0.10.1/deadpool_postgres) crate .
 ///
-///This function will attempt to create a database and using the [`deadpool_postgres`](https://docs.rs/deadpool-postgres/0.10.1/deadpool_postgres) crate to return a [`Pool`](https://docs.rs/deadpool-postgres/0.10.1/deadpool_postgres/type.Pool.html),
-///and it will handle the "42P04", "Attempting to create a duplicate database." postgres error if returned.
+///This function will attempt to create a database by using the [`deadpool_postgres`](https://docs.rs/deadpool-postgres/0.10.1/deadpool_postgres) crate to return a [`Pool`](https://docs.rs/deadpool-postgres/0.10.1/deadpool_postgres/type.Pool.html),
+///and it will handle the *"42P04", "Attempting to create a duplicate database."* postgres error if returned.
+///
+/// # Important
+/// Note that by default the `dbname` in the `config` shouldn't be enclosed in **double quotes**.
+/// To create a database that has a name enclosed in **double-quotes** ("), the **`quotes`** feature has to be enabled.
 ///
 /// # Errors
 ///
@@ -208,7 +213,7 @@ use {
 ///     }
 /// }
 ///
-/// async fn create_db_and_get_pool_should_succeed() {
+/// async fn create_db_and_get_pool() {
 /// dotenv().ok();
 /// let cfg = Config::from_env().unwrap();
 /// let cfg = cfg.pg;
@@ -224,7 +229,7 @@ use {
 ///             println!("error from pool {:?}", e);
 ///         }
 ///     };
-/// }
+///   }
 /// }
 ///```
 ///
@@ -264,13 +269,13 @@ where
 }
 ///Convenient function that attempts to establish a connection with `db_name` and then return [`tokio_postgres`][`deadpool_postgres::tokio_postgres`] [`Client`].
 ///
-/// Note that by default the database name created will be without the **double quotes**.
-/// If you wish the database name to be created with **the double quotes**, you need to enable the **`quotes`** feature.
-///
-/// Refer to [PosgreSql doc](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS) For more details.
-///
-/// This function will attempt to establish a connection using the `db_name` argument and it will handle the "42P04", "Attempting to create a duplicate database." postgres error if returned, by creating a new database named after the `db_name` argument provided
+/// This function will attempt to establish a connection using the `db_name` argument and it will handle the *"42P04", "Attempting to create a duplicate database."* postgres error if returned, by creating a new database named after the `db_name` argument
 /// and then returns a [`tokio_postgres`][`deadpool_postgres::tokio_postgres`] [`Client`].
+///
+/// Note that by default the `db_name` argument shouldn't be enclosed in **double quotes**.
+/// To drop a database that has a name enclosed in **double-quotes** ("), the **`quotes`** feature has to be enabled.
+///
+/// To Learn more about PostgreSQL's Syntax Refer to [PosgreSql doc](https://www.postgresql.org/docs/current/sql-syntax-lexical.html#SQL-SYNTAX-IDENTIFIERS).
 ///
 /// # Errors
 ///

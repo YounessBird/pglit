@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_macros, unused_imports)]
 
 use deadpool_postgres::tokio_postgres::{config::Config as tkconfig, NoTls};
 use deadpool_postgres::{Config as dpconfig, ConfigError, Pool};
@@ -75,6 +75,7 @@ async fn db_name_test() {
 
 #[cfg(not(feature = "quotes"))]
 #[tokio::test]
+
 //  if default feature is set a syntax error, code "42601" should be returned
 async fn db_name_test() {
     let config = get_tokio_config();
