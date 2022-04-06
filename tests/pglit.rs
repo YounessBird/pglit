@@ -3,7 +3,7 @@
 use deadpool_postgres::tokio_postgres::{config::Config as tkconfig, NoTls};
 use deadpool_postgres::{Config as dpconfig, ConfigError, Pool};
 use dotenv::dotenv;
-use pglit::{connect, create_db, deadpool_create_db, drop_db};
+use pglit::{connect, create_db, deadpool_create_db, drop_db, forcedrop_db};
 
 use serde::{Deserialize, Serialize};
 use tokio_pg_mapper::FromTokioPostgresRow;
@@ -277,6 +277,64 @@ async fn create_db_and_get_pool() {
 
     // test duplicate db handling
     assert!(deadpool_create_db(cfg, None, NoTls).await.is_ok());
+}
+
+use std::sync::Arc;
+#[cfg(not(feature = "quotes"))]
+#[tokio::test]
+async fn forcedrop_test() {
+    let config = get_tokio_config();
+    let (client, connection) = connect(config.clone(), "db_test", NoTls).await.unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+    {
+        let table = include_str!("./sql/create_table_test.sql");
+        let _ = client.query(table, &[]).await;
+    }
+    let clientref = Arc::new(client);
+
+    let mut tasks = vec![];
+    for _i in 0..2 {
+        let client = clientref.clone();
+
+        tasks.push(tokio::spawn(async move {
+            let text = include_str!("./sql/insert_into_table_test.sql");
+            let _ = client
+                .query(
+                    text,
+                    &[
+                        &"joe",
+                        &"doe",
+                        &"9",
+                        &"88 Colin P Kelly Jr St, San Francisco, CA 94107, United States",
+                        &"joe.doe@example.com",
+                    ],
+                )
+                .await;
+        }));
+    }
+    tasks.push(tokio::spawn(async move {
+        //assert that db can't be dropped because is being accessed by other users
+        drop_db(&mut config.clone(), "db_test", NoTls, |result| {
+            assert!(result.is_err());
+            if let Err(e) = result {
+                assert_eq!(e.code, "55006");
+                eprintln!("Error dropping db {:?}", e);
+            }
+        })
+        .await;
+        //force drop db
+        forcedrop_db(&mut config.clone(), "db_test", NoTls, |result| {
+            assert!(result.is_ok());
+        })
+        .await
+    }));
+    for handle in tasks {
+        let _ = handle.await;
+    }
 }
 
 use std::{collections::HashMap, env};
