@@ -27,7 +27,7 @@ where
         let escaped_db_name = db_name.replace('\"', "");
         db_name = format!(r#""{}""#, escaped_db_name);
     }
-
+    // Todo handle id db name is empty
     let db_name = db_name.as_str();
     match config.connect(tls).await {
         Ok((client, connection)) => {
