@@ -20,7 +20,7 @@ where
     T::TlsConnect: Sync + Send,
     <T::TlsConnect as TlsConnect<Socket>>::Future: Send,
 {
-    let _ = config.dbname(ADMIN_DB);
+    let _ = config.dbname(ADMIN_D);
     let mut db_name = db_name.to_string();
 
     if cfg!(feature = "quotes") {
