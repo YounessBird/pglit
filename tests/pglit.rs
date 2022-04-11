@@ -47,6 +47,17 @@ async fn reset_test(config: &mut tkconfig, db_name: &str) {
     })
     .await;
 }
+#[tokio::test]
+
+async fn create_empty_name_db() {
+    let mut config = get_tokio_config();
+    let db_name = "";
+    create_db(&mut config, db_name, NoTls, |res| match res {
+        Ok(_) => println!("success"),
+        Err(e) => println!("error {}", e.message),
+    })
+    .await;
+}
 
 #[cfg(feature = "quotes")]
 #[tokio::test]
