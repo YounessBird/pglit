@@ -20,7 +20,7 @@ where
     T::TlsConnect: Sync + Send,
     <T::TlsConnect as TlsConnect<Socket>>::Future: Send,
 {
-    if db_name == "" {
+    if db_name.is_empty() {
         panic!("The database name in the `db_name` argument should not be empty");
     }
     let _ = config.dbname(ADMIN_DB);
