@@ -43,6 +43,9 @@ pub type CustomError = CustomErrors;
 ///
 /// Obtain a [`Result<u64, CustomError>`] via a callback Closure
 ///
+/// # Panics
+///  
+/// This function will panic if the `db_name` argument is empty.   
 ///
 /// # Errors
 ///
@@ -52,7 +55,7 @@ pub type CustomError = CustomErrors;
 ///
 /// ```
 /// use tokio_postgres::{config::Config,NoTls};
-/// use pgtools::create_db;
+/// use pglit::create_db;
 ///
 ///async fn connect_to_db() {
 ///    let mut config = Config::new();
@@ -89,7 +92,10 @@ where
 /// The database name in [`tokio_postgres::Config`][`deadpool_postgres::tokio_postgres::Config`] will be ignored and replaced with the `db_name` argument.
 /// Obtain a [`Result<u64, CustomError>`] via a callback Closure
 ///
-///
+/// # Panics
+///  
+/// This function will panic if the `db_name` argument is empty.
+///  
 /// # Errors
 ///
 /// See [`CustomError`] for details.
@@ -98,7 +104,7 @@ where
 ///
 /// ```
 /// use tokio_postgres::{config::Config,NoTls};
-/// use pgtools::drop_db;
+/// use pglit::drop_db;
 ///async fn drop_the_db() {
 ///    let mut config = Config::new();
 ///    config.user("testuser");
@@ -141,8 +147,11 @@ where
 /// To drop a database that has a name enclosed in **double-quotes** ("), the **`quotes`** feature has to be enabled.
 ///
 ///
-/// obtain a [Result<u64, CustomError>] via a callback Closure
+/// Obtain a [Result<u64, CustomError>] via a callback Closure
 ///
+/// # Panics
+///  
+/// This function will panic if the `db_name` argument is empty.  
 ///
 /// # Errors
 ///
@@ -152,7 +161,7 @@ where
 ///
 /// ```
 /// use tokio_postgres::{config::Config,NoTls};
-/// use pgtools::drop_db;
+/// use pglit::drop_db;
 ///async fn force_drop_the_db() {
 ///    let mut config = Config::new();
 ///    config.user("testuser");
