@@ -47,16 +47,35 @@ async fn reset_test(config: &mut tkconfig, db_name: &str) {
     })
     .await;
 }
-#[tokio::test]
 
-async fn create_empty_name_db() {
-    let mut config = get_tokio_config();
-    let db_name = "";
-    create_db(&mut config, db_name, NoTls, |res| match res {
-        Ok(_) => println!("success"),
-        Err(e) => println!("error {}", e.message),
-    })
-    .await;
+#[cfg(test)]
+#[cfg(not(feature = "quotes"))]
+mod test_dbname_empty {
+    use super::*;
+
+    #[tokio::test]
+    #[should_panic(expected = "The database name in the `db_name` argument should not be empty")]
+    async fn create_dbname_empty() {
+        let config = get_tokio_config();
+        let db_name = "";
+        create_db(&mut config.clone(), db_name, NoTls, |_res| {}).await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "The database name in the `db_name` argument should not be empty")]
+    async fn drop_dbname_empty() {
+        let config = get_tokio_config();
+        let db_name = "";
+        drop_db(&mut config.clone(), db_name, NoTls, |_res| {}).await;
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "The database name in the `db_name` argument should not be empty")]
+    async fn forcedrop_dbname_empty() {
+        let config = get_tokio_config();
+        let db_name = "";
+        forcedrop_db(&mut config.clone(), db_name, NoTls, |_res| {}).await;
+    }
 }
 
 #[cfg(feature = "quotes")]
