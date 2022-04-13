@@ -176,15 +176,15 @@ where
 ///}
 /// ```
 ///
-pub async fn forcedrop_db<T, F>(config: &mut PgConfig, db_name: &str, tls: T, cb: F)
+pub async fn forcedrop_db<T, F, U>(config: &mut PgConfig, db_name: &str, tls: T, cb: F) -> U
 where
-    F: FnMut(Result<u64, CustomError>),
+    F: FnMut(Result<u64, CustomError>) -> U,
     T: MakeTlsConnect<Socket> + Clone + Sync + Send + 'static,
     T::Stream: Sync + Send,
     T::TlsConnect: Sync + Send,
     <T::TlsConnect as TlsConnect<Socket>>::Future: Send,
 {
-    handle_db(config, db_name, tls, cb, "DROP, WITH (FORCE);").await;
+    handle_db(config, db_name, tls, cb, "DROP, WITH (FORCE);").await
 }
 
 use {
