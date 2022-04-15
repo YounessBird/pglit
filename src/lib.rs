@@ -318,3 +318,55 @@ where
     .await;
     client_result.await
 }
+
+/// Checks if a table exist in a particular schema in the database.
+///
+/// Note that if the `schema_name` argument is empty then it will default to the `public` schema.
+///
+///  
+/// Returns a [`bool`] via a callback Closure
+///
+/// # Panics
+///  
+/// This function will panic if the `table_name` argument is empty.   
+///
+///
+/// # Example
+///
+/// ```
+/// use tokio_postgres::{config::Config,NoTls};
+/// use pglit::table_exists;
+/// async fn tables_exist() {
+///     let mut config = Config::new();
+///     config.user("testuser");
+///     config.password("secretPassword");
+///     config.dbname("testdb");
+///     let (client, connection) = config.connect(NoTls).await.unwrap();
+///     tokio::spawn(async move {
+///         if let Err(e) = connection.await {
+///             eprintln!("connection error: {}", e);
+///         }
+///     });
+///     let tb_exist = table_exists(&client, "", "pglit_table").await;
+///     assert!(!tb_exist);
+/// }
+/// ```
+///
+pub async fn table_exists(client: &Client, schema_name: &str, table_name: &str) -> bool {
+    if table_name.is_empty() {
+        panic!("the `table_name` argument should not be empty");
+    }
+
+    let mut statement = include_str!("../sql/fetch_table_name.sql")
+        .trim()
+        .to_string();
+    statement = statement.replace("$table_name", table_name);
+
+    if schema_name.is_empty() {
+        statement = statement.replace("$schema_name", "public");
+    } else {
+        statement = statement.replace("$schema_name", schema_name);
+    }
+    let res = client.execute(statement.as_str(), &[]).await.unwrap();
+    res != 0
+}
