@@ -423,7 +423,7 @@ async fn table_exists_test() {
     assert!(table_exists(&client, "", "student").await);
 }
 
-#[cfg(not(feature = "quotes"))]
+//#[cfg(not(feature = "quotes"))]
 #[tokio::test]
 async fn create_schema_test() {
     let db_name = "pglit";

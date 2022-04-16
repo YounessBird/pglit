@@ -402,12 +402,10 @@ where
     if set_schema {
         let schemas_list = filtered_schema_names.join(", ");
         batch_statement = format!(
-            "{}{}",
-            batch_statement,
-            format!("{} {}, public;", set_schm_stm, schemas_list)
+            "{}{} {}, public;",
+            batch_statement, set_schm_stm, schemas_list
         );
     }
-
     let res = client.batch_execute(batch_statement.as_str()).await;
     match res {
         Ok(_) => cb(Ok(())),
