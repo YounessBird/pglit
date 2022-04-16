@@ -3,7 +3,9 @@
 use deadpool_postgres::tokio_postgres::{config::Config as tkconfig, NoTls};
 use deadpool_postgres::{Config as dpconfig, ConfigError, Pool};
 use dotenv::dotenv;
-use pglit::{connect, create_db, deadpool_create_db, drop_db, forcedrop_db, table_exists};
+use pglit::{
+    connect, create_db, create_schemas, deadpool_create_db, drop_db, forcedrop_db, table_exists,
+};
 
 use serde::{Deserialize, Serialize};
 use tokio_pg_mapper::FromTokioPostgresRow;
@@ -53,7 +55,7 @@ async fn reset_test(config: &mut tkconfig, db_name: &str) {
 
 #[cfg(test)]
 #[cfg(not(feature = "quotes"))]
-mod test_dbname_empty {
+mod panic_tests {
     use super::*;
 
     #[tokio::test]
@@ -94,19 +96,19 @@ mod test_dbname_empty {
         });
         table_exists(&client, schema_name, table_name).await;
     }
-    // #[tokio::test]
-    // #[should_panic(expected = "The `schemas_names` should have at least one element")]
-    // async fn create_schema_vec_empty() {
-    //     let config = get_tokio_config();
-    //     let db_name = "testdb";
-    //     let (client, connection) = connect(config.clone(), db_name, NoTls).await.unwrap();
-    //     tokio::spawn(async move {
-    //         if let Err(e) = connection.await {
-    //             eprintln!("connection error: {}", e);
-    //         }
-    //     });
-    //     create_schemas(&client, vec![], false, |_res| {}).await;
-    // }
+    #[tokio::test]
+    #[should_panic(expected = "The `schemas_names` should have at least one element")]
+    async fn create_schema_vec_empty() {
+        let config = get_tokio_config();
+        let db_name = "testdb";
+        let (client, connection) = connect(config.clone(), db_name, NoTls).await.unwrap();
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                eprintln!("connection error: {}", e);
+            }
+        });
+        create_schemas(&client, vec![], false, |_res| {}).await;
+    }
 }
 
 #[cfg(feature = "quotes")]
@@ -421,32 +423,32 @@ async fn table_exists_test() {
     assert!(table_exists(&client, "", "student").await);
 }
 
-// #[cfg(not(feature = "quotes"))]
-// #[tokio::test]
-// async fn create_schema_test() {
-//     let db_name = "pglit";
-//     let config = get_tokio_config();
-//     //reset test if run more than once
-//     let _ = reset_test(&mut config.clone(), db_name).await;
+//#[cfg(not(feature = "quotes"))]
+#[tokio::test]
+async fn create_schema_test() {
+    let db_name = "pglit";
+    let config = get_tokio_config();
+    //reset test if run more than once
+    let _ = reset_test(&mut config.clone(), db_name).await;
 
-//     let (client, connection) = connect(config.clone(), db_name, NoTls).await.unwrap();
-//     tokio::spawn(async move {
-//         if let Err(e) = connection.await {
-//             eprintln!("connection error: {}", e);
-//         }
-//     });
-//     create_schemas(
-//         &client,
-//         vec!["sport", "", "sales", "books"],
-//         true,
-//         |_res| {},
-//     )
-//     .await;
-//     let table = include_str!("./sql/create_table_test.sql");
-//     let _ = client.query(table, &[]).await;
+    let (client, connection) = connect(config.clone(), db_name, NoTls).await.unwrap();
+    tokio::spawn(async move {
+        if let Err(e) = connection.await {
+            eprintln!("connection error: {}", e);
+        }
+    });
+    create_schemas(
+        &client,
+        vec!["sport", "", "sales", "books"],
+        true,
+        |_res| {},
+    )
+    .await;
+    let table = include_str!("./sql/create_table_test.sql");
+    let _ = client.query(table, &[]).await;
 
-//     assert!(table_exists(&client, "sport", "student").await);
-// }
+    assert!(table_exists(&client, "sport", "student").await);
+}
 
 use std::{collections::HashMap, env};
 struct Env {

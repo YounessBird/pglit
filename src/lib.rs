@@ -370,3 +370,54 @@ pub async fn table_exists(client: &Client, schema_name: &str, table_name: &str) 
     let res = client.execute(statement.as_str(), &[]).await.unwrap();
     res != 0
 }
+/// to document
+/// if set_schema is set to true the new schemas will be added the search path
+/// Note that the first schema of the list wil become the default schema, which means any future requests such as creating a table will be associated with it if the schema name is omited from the sql statement
+
+pub async fn create_schemas<F, U>(
+    client: &Client,
+    schemas_names: Vec<&'static str>,
+    set_schema: bool,
+    mut cb: F,
+) -> U
+where
+    F: FnMut(Result<(), CustomError>) -> U,
+{
+    if schemas_names.is_empty() {
+        panic!("The `schemas_names` should have at least one element");
+    }
+    let crt_schm_stm = include_str!("../sql/create_schema.sql").trim().to_string();
+    let set_schm_stm = include_str!("../sql/set_schema.sql").trim().to_string();
+
+    let mut filtered_schema_names = vec![];
+
+    let mut batch_statement = schemas_names.iter().fold(String::new(), |stm, schm| {
+        if schm.is_empty() {
+            return stm;
+        }
+        filtered_schema_names.push(*schm);
+        let schem = crt_schm_stm.replace("$schema", schm);
+        format!("{}{}", stm, schem)
+    });
+    if set_schema {
+        let schemas_list = filtered_schema_names.join(", ");
+        batch_statement = format!(
+            "{}{} {}, public;",
+            batch_statement, set_schm_stm, schemas_list
+        );
+    }
+    let res = client.batch_execute(batch_statement.as_str()).await;
+    match res {
+        Ok(_) => cb(Ok(())),
+
+        Err(e) => cb(Err(CustomError::new(e))),
+    }
+}
+
+// create schema
+// set schema as default
+// both create and set
+//SELECT to_regclass('$schema_name.$table_name');
+
+// maybe create some sort of global policy a struct wich will hold config, tls, all arguments needed and pas them to functions
+//remember to change config in connect function signature to &mut
